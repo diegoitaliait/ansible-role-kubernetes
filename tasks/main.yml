@@ -18,6 +18,12 @@
   notify: restart kubelet
   with_items: "{{ kubernetes_packages }}"
 
+- name: Check Kubernetes dependencies
+  package:
+    name: "{{ item.name | default(item) }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ kubernetes_dependencies_packages }}"
+
 - include_tasks: sysctl-setup.yml
 
 - include_tasks: kubelet-setup.yml
@@ -35,13 +41,13 @@
 
 # Set up master.
 - include_tasks: master-setup.yml
-  when: kubernetes_role == 'master'
+  when: kubernetes_role == 'master' and kubernetes_can_configure_master
 
 # Set up nodes.
 - name: Get the kubeadm join command from the Kubernetes master.
   command: kubeadm token create --print-join-command
   changed_when: false
-  when: kubernetes_role == 'master'
+  when: kubernetes_role == 'master' and kubernetes_can_configure_master
   register: kubernetes_join_command_result
 
 - name: Set the kubeadm join command globally.
@@ -49,10 +55,10 @@
     kubernetes_join_command: >
       {{ kubernetes_join_command_result.stdout }}
       {{ kubernetes_join_command_extra_opts }}
-  when: kubernetes_join_command_result.stdout is defined
+  when: kubernetes_join_command_result.stdout is defined and kubernetes_can_configure_node
   delegate_to: "{{ item }}"
   delegate_facts: true
   with_items: "{{ groups['all'] }}"
 
 - include_tasks: node-setup.yml
-  when: kubernetes_role == 'node'
+  when: kubernetes_role == 'node' and kubernetes_can_configure_node

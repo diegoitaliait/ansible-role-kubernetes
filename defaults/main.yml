@@ -1,16 +1,23 @@
 ---
+kubernetes_can_configure_master: no
+kubernetes_can_configure_node: no
+
 kubernetes_packages:
-  - name: kubelet
+  - name: 'kubelet={{ kubernetes_version }}*'
     state: present
-  - name: kubectl
+  - name: 'kubectl={{ kubernetes_version }}*'
     state: present
-  - name: kubeadm
-    state: present
-  - name: kubernetes-cni
+  - name: 'kubeadm={{ kubernetes_version }}*'
     state: present
 
-kubernetes_version: '1.19'
-kubernetes_version_rhel_package: '1.19.0'
+kubernetes_dependencies_packages:
+  - name: kubernetes-cni
+    state: present
+  - name: cri-tools
+    state: present
+
+kubernetes_version: '1.18'
+kubernetes_version_rhel_package: '1.18.0'
 
 kubernetes_role: master
 
